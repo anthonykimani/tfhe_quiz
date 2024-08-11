@@ -22,6 +22,19 @@ pub fn get_all_users(connection: &mut PgConnection) -> Vec<User> {
     return all_users;
 }
 
+pub fn get_a_user_by_mail(connection: &mut PgConnection, user_email: String) -> Option<User> {
+    use crate::schema::users::dsl::*;
+
+    users
+        .filter(email.eq(user_email))
+        .first::<User>(connection)
+        .optional() // This will convert the result to Option
+        .unwrap_or_else(|err| {
+            println!("Error occurred: {:?}", err);
+            None
+        })
+}
+
 pub fn get_a_user_by_id(connection: &mut PgConnection, user_id: i32) -> Option<User> {
     use crate::schema::users::dsl::*;
 

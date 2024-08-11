@@ -24,3 +24,17 @@ pub struct NewUser {
     pub public_key: String,
     pub password: String
 }
+
+#[derive(Deserialize, Serialize)]
+pub struct LoginForm {
+    pub  email: String,
+    pub  password: String
+}
+
+#[derive(Deserialize, Serialize, Debug)]
+pub struct RegisterForm {
+    pub name: String,
+    pub email: String,
+    pub age: String,
+    pub password: String
+}
