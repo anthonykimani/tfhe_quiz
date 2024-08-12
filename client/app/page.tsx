@@ -1,16 +1,67 @@
-import Image from "next/image";
+"use client";
+
 import Link from "next/link";
+// import { useAuth as useAuthOriginal } from "@/context/AuthContext"; // Import the original useAuth hook
+import { useState } from "react";
+import useAxios from "@/hooks/useAxios";
+import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+import { LoginFormFields } from "@/types/form-types";
+import { Form, Formik, useField } from "formik";
+import * as Yup from "yup";
+import TextInput from "@/components/inputs/text-input";
+import PasswordInput from "@/components/inputs/password-input";
+
+// A wrapper or assertion to cast the useAuth hook's return type
+// const useAuth = () => useAuthOriginal() as unknown as AuthContextType;
 
 export default function Home() {
+  // const { login } = useAuth(); // Use the typed useAuth hook here
+  const [openLoading, setOpenLoading] = useState(false);
+  const [passwordVisibility, setPasswordVisibility] = useState("password");
+  const [openLoggin, setOpenLoggin] = useState(false); // Opens the Account Creation Loading Dialog
+  const [openAccErr, setOpenAccErr] = useState(false); // Opens the Failed Acc Creation Loading Dialog
+  const api = useAxios();
+  const router = useRouter();
+
+  // Mutation to Initiate Login User
+  const initiateLoginUser = useMutation({
+    mutationFn: (initiateLoginUserPost: LoginFormFields) => {
+      return api.post(
+        "auth/login",
+        {
+          email: initiateLoginUserPost.email,
+          password: initiateLoginUserPost.password,
+        },
+        {
+          method: "POST",
+        }
+      );
+    },
+    onSuccess: (data, variables, context) => {
+      setOpenLoading(false);
+      setOpenLoggin(true);
+      console.log(data);
+      // login(data); // Use the login function from your context
+      router.replace("/dashboard");
+    },
+    onError: (error, variables, context) => {
+      // Handle errors, e.g., show a message to the user
+      console.error(error);
+      setOpenLoading(false);
+      setOpenAccErr(true);
+    },
+    onSettled: (data, error, variables, context) => {
+      console.log(data);
+    },
+  });
   return (
     <main>
       <div className="flex min-h-full flex-1 flex-col justify-center py-12 sm:px-6 lg:px-8">
         <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <img
-            className="mx-auto h-10 w-auto"
-            src="https://tailwindui.com/img/logos/mark.svg?color=indigo&shade=600"
-            alt="Your Company"
-          />
+          {/* <h2 className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
+            Fully Homomorphic Encryption Voting System
+          </h2> */}
           <h2 className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
             Sign in to your account
           </h2>
@@ -18,69 +69,55 @@ export default function Home() {
 
         <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
           <div className="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
-            <form className="space-y-6" action="#" method="POST">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium leading-6 text-gray-900">
-                  Email address
-                </label>
-                <div className="mt-2">
-                  <input
-                    id="email"
-                    name="email"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
-                </div>
-              </div>
+            <Formik
+              initialValues={{
+                email: "",
+                password: "",
+              }}
+              validationSchema={Yup.object({
+                email: Yup.string()
+                  .email("Enter valid email address")
+                  .min(13, "Min of 13 Characters required")
+                  .required("Email is Required"),
+                password: Yup.string()
+                  .max(20, "Must be 20 characters or less")
+                  .min(5, "Min of 5 Characters required")
+                  .required("Password is Required"),
+              })}
+              onSubmit={(values, { setSubmitting }) => {
+                const requestData = {
+                  ...values,
+                };
 
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium leading-6 text-gray-900">
-                  Password
-                </label>
-                <div className="mt-2">
-                  <input
-                    id="password"
-                    name="password"
-                    type="password"
-                    autoComplete="current-password"
-                    required
-                    className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-                  />
-                </div>
-              </div>
+                // Call the Initiate Register User Mutation
+                initiateLoginUser.mutate(requestData);
+              }}
+            >
+              <Form className="space-y-6">
+                <TextInput
+                  label="Email address"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your Email Address"
+                />
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="remember-me"
-                    name="remember-me"
-                    type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
-                  />
-                  <label htmlFor="remember-me" className="ml-3 block text-sm leading-6 text-gray-900">
-                    Remember me
-                  </label>
+                <PasswordInput
+                  label="Password"
+                  name="password"
+                  placeholder="Enter your Password"
+                />
+                <div>
+                  <button
+                    type="submit"
+                    className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  >
+                    Sign in
+                  </button>
                 </div>
+              </Form>
+            </Formik>
 
-                <div className="text-sm leading-6">
-                  <a href="#" className="font-semibold text-indigo-600 hover:text-indigo-500">
-                    Forgot password?
-                  </a>
-                </div>
-              </div>
-
-              <div>
-                <button
-                  type="submit"
-                  className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-                >
-                  Sign in
-                </button>
-              </div>
-            </form>
-{/* 
+            {/* 
             <div>
               <div className="relative mt-10">
                 <div className="absolute inset-0 flex items-center" aria-hidden="true">
@@ -120,8 +157,11 @@ export default function Home() {
           </div>
 
           <p className="mt-10 text-center text-sm text-gray-500">
-            Don&apos;t Have an account?{' '}
-            <Link href="/register" className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500">
+            Don&apos;t Have an account?{" "}
+            <Link
+              href="/register"
+              className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
+            >
               Create a New Account
             </Link>
           </p>
