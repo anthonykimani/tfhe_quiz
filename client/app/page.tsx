@@ -1,112 +1,171 @@
-import Image from "next/image";
+"use client";
+
+import Link from "next/link";
+// import { useAuth as useAuthOriginal } from "@/context/AuthContext"; // Import the original useAuth hook
+import { useState } from "react";
+import useAxios from "@/hooks/useAxios";
+import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
+import { LoginFormFields } from "@/types/form-types";
+import { Form, Formik, useField } from "formik";
+import * as Yup from "yup";
+import TextInput from "@/components/inputs/text-input";
+import PasswordInput from "@/components/inputs/password-input";
+
+// A wrapper or assertion to cast the useAuth hook's return type
+// const useAuth = () => useAuthOriginal() as unknown as AuthContextType;
 
 export default function Home() {
+  // const { login } = useAuth(); // Use the typed useAuth hook here
+  const [openLoading, setOpenLoading] = useState(false);
+  const [passwordVisibility, setPasswordVisibility] = useState("password");
+  const [openLoggin, setOpenLoggin] = useState(false); // Opens the Account Creation Loading Dialog
+  const [openAccErr, setOpenAccErr] = useState(false); // Opens the Failed Acc Creation Loading Dialog
+  const api = useAxios();
+  const router = useRouter();
+
+  // Mutation to Initiate Login User
+  const initiateLoginUser = useMutation({
+    mutationFn: (initiateLoginUserPost: LoginFormFields) => {
+      return api.post(
+        "auth/login",
+        {
+          email: initiateLoginUserPost.email,
+          password: initiateLoginUserPost.password,
+        },
+        {
+          method: "POST",
+        }
+      );
+    },
+    onSuccess: (data, variables, context) => {
+      setOpenLoading(false);
+      setOpenLoggin(true);
+      console.log(data);
+      // login(data); // Use the login function from your context
+      router.replace("/dashboard");
+    },
+    onError: (error, variables, context) => {
+      // Handle errors, e.g., show a message to the user
+      console.error(error);
+      setOpenLoading(false);
+      setOpenAccErr(true);
+    },
+    onSettled: (data, error, variables, context) => {
+      console.log(data);
+    },
+  });
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 w-full max-w-5xl items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:size-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{" "}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+    <main>
+      <div className="flex min-h-full flex-1 flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md">
+          {/* <h2 className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
+            Fully Homomorphic Encryption Voting System
+          </h2> */}
+          <h2 className="mt-6 text-center text-2xl font-bold leading-9 tracking-tight text-gray-900">
+            Sign in to your account
+          </h2>
         </div>
-      </div>
 
-      <div className="relative z-[-1] flex place-items-center before:absolute before:h-[300px] before:w-full before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-full after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 sm:before:w-[480px] sm:after:w-[240px] before:lg:h-[360px]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
+        <div className="mt-10 sm:mx-auto sm:w-full sm:max-w-[480px]">
+          <div className="bg-white px-6 py-12 shadow sm:rounded-lg sm:px-12">
+            <Formik
+              initialValues={{
+                email: "",
+                password: "",
+              }}
+              validationSchema={Yup.object({
+                email: Yup.string()
+                  .email("Enter valid email address")
+                  .min(13, "Min of 13 Characters required")
+                  .required("Email is Required"),
+                password: Yup.string()
+                  .max(20, "Must be 20 characters or less")
+                  .min(5, "Min of 5 Characters required")
+                  .required("Password is Required"),
+              })}
+              onSubmit={(values, { setSubmitting }) => {
+                const requestData = {
+                  ...values,
+                };
 
-      <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Docs{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Find in-depth information about Next.js features and API.
+                // Call the Initiate Register User Mutation
+                initiateLoginUser.mutate(requestData);
+              }}
+            >
+              <Form className="space-y-6">
+                <TextInput
+                  label="Email address"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your Email Address"
+                />
+
+                <PasswordInput
+                  label="Password"
+                  name="password"
+                  placeholder="Enter your Password"
+                />
+                <div>
+                  <button
+                    type="submit"
+                    className="flex w-full justify-center rounded-md bg-indigo-600 px-3 py-1.5 text-sm font-semibold leading-6 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+                  >
+                    Sign in
+                  </button>
+                </div>
+              </Form>
+            </Formik>
+
+            {/* 
+            <div>
+              <div className="relative mt-10">
+                <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                  <div className="w-full border-t border-gray-200" />
+                </div>
+                <div className="relative flex justify-center text-sm font-medium leading-6">
+                  <span className="bg-white px-6 text-gray-900">Or continue with</span>
+                </div>
+              </div>
+
+              <div className="mt-6 grid grid-cols-2 gap-4">
+                <a
+                  href="#"
+                  className="flex w-full items-center justify-center gap-3 rounded-md bg-[#1D9BF0] px-3 py-1.5 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#1D9BF0]"
+                >
+                  <svg className="h-5 w-5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M6.29 18.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0020 3.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.073 4.073 0 01.8 7.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 010 16.407a11.616 11.616 0 006.29 1.84" />
+                  </svg>
+                  <span className="text-sm font-semibold leading-6">Twitter</span>
+                </a>
+
+                <a
+                  href="#"
+                  className="flex w-full items-center justify-center gap-3 rounded-md bg-[#24292F] px-3 py-1.5 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#24292F]"
+                >
+                  <svg className="h-5 w-5" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span className="text-sm font-semibold leading-6">GitHub</span>
+                </a>
+              </div>
+            </div> */}
+          </div>
+
+          <p className="mt-10 text-center text-sm text-gray-500">
+            Don&apos;t Have an account?{" "}
+            <Link
+              href="/register"
+              className="font-semibold leading-6 text-indigo-600 hover:text-indigo-500"
+            >
+              Create a New Account
+            </Link>
           </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Learn{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Templates{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-sm opacity-50">
-            Explore starter templates for Next.js.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className="mb-3 text-2xl font-semibold">
-            Deploy{" "}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className="m-0 max-w-[30ch] text-balance text-sm opacity-50">
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
+        </div>
       </div>
     </main>
   );
