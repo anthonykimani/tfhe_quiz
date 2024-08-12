@@ -1,5 +1,5 @@
-use actix_web::error::UrlencodedError::ContentType;
 use actix_web::{HttpResponse, Responder, web};
+use actix_web::http::header::ContentType;
 use bcrypt::{DEFAULT_COST, hash, verify};
 use serde_json::json;
 use crate::db_operations::users::{add_user, get_a_user_by_mail};
@@ -11,42 +11,19 @@ async fn handle_register_error(error: &str) -> HttpResponse {
         "status": "error",
         "message": error,
     });
-    HttpResponse::Ok().content_type("application/json").body(response_body.to_string())
+    HttpResponse::Ok().content_type(ContentType::json()).body(response_body.to_string())
 }
 
-pub async fn register_request(error: Option<String>) -> impl Responder {
-    let response_body = json!({
-        "status": if error.is_some() { "error" } else { "success" },
-        "error": error,
-    });
-
-    HttpResponse::Ok()
-        .content_type("application/json")
-        .body(response_body.to_string())
-}
-
-pub async fn login_request(error: Option<String>, message: Option<String>) -> impl Responder {
-    let response_body = json!({
-        "status": if error.is_some() { "error" } else { "success" },
-        "error": error,
-        "message": message
-    });
-
-    HttpResponse::Ok()
-        .content_type("application/json")
-        .body(response_body.to_string())
-}
-
-pub async fn login_user(form: web::Form<LoginForm>, state: web::Data<AppState>) -> Result<HttpResponse, actix_web::Error> {
+pub async fn login_user(json: web::Json<LoginForm>, state: web::Data<AppState>) -> Result<HttpResponse, actix_web::Error> {
     let mut connection_guard = state.db_connection.lock().unwrap();
 
-    let user_exist = get_a_user_by_mail(&mut *connection_guard, form.email.clone());
+    let user_exist = get_a_user_by_mail(&mut *connection_guard, json.email.clone());
     match user_exist {
         Some(user) => {
-            if verify(&form.password, &user.password).unwrap_or(false) {
-                println!("user_email:{:?}", &form.email);
+            if verify(&json.password, &user.password).unwrap_or(false) {
+                println!("user_email:{:?}", &json.email);
                 Ok(HttpResponse::Ok()
-                    .content_type("application/json")
+                    .content_type(ContentType::json())
                     .json(json!({
                         "status": "success",
                         "message": "Login successful.",
@@ -55,7 +32,7 @@ pub async fn login_user(form: web::Form<LoginForm>, state: web::Data<AppState>) 
             } else {
                 // Error response for wrong password
                 Ok(HttpResponse::Unauthorized()
-                    .content_type("application/json")
+                    .content_type(ContentType::json())
                     .json(json!({
                         "status": "error",
                         "message": "Wrong password."
@@ -65,7 +42,7 @@ pub async fn login_user(form: web::Form<LoginForm>, state: web::Data<AppState>) 
         None => {
             // Error response for email not found
             Ok(HttpResponse::NotFound()
-                .content_type("application/json")
+                .content_type(ContentType::json())
                 .json(json!({
                     "status": "error",
                     "message": "Email not found."
@@ -74,10 +51,10 @@ pub async fn login_user(form: web::Form<LoginForm>, state: web::Data<AppState>) 
     }
 }
 
-pub async fn register_user(item: web::Form<RegisterForm>, state: web::Data<AppState>) -> HttpResponse {
-    println!("Data is {:#?}", item);
+pub async fn register_user(state: web::Data<AppState>, json: web::Json<RegisterForm>) -> HttpResponse {
+    println!("Data is {:#?}", json);
 
-    if item.name.is_empty() || item.email.is_empty() || item.password.is_empty() {
+    if json.name.is_empty() || json.email.is_empty() || json.password.is_empty() {
         println!("Empty fields detected");
         return handle_register_error("All fields are required").await;
     }
@@ -85,12 +62,12 @@ pub async fn register_user(item: web::Form<RegisterForm>, state: web::Data<AppSt
     println!("All fields have content");
 
     // Hash and salt the password
-    let hashed_password = match hash(&item.password, DEFAULT_COST) {
+    let hashed_password = match hash(&json.password, DEFAULT_COST) {
         Ok(hashed) => hashed,
         Err(er) => {
             println!("error hashing password: {}", er);
             return HttpResponse::InternalServerError()
-                .content_type("application/json")
+                .content_type(ContentType::json())
                 .json(json!({
                     "status": "error",
                     "message": "Error hashing password."
@@ -99,9 +76,9 @@ pub async fn register_user(item: web::Form<RegisterForm>, state: web::Data<AppSt
     };
 
     let new_user = NewUser {
-        name: item.name.clone(),
-        email: item.email.clone(),
-        public_key: "".to_string(),
+        name: json.name.clone(),
+        email: json.email.clone(),
+        public_key: "hello".to_string(),
         password: hashed_password,
     };
 
@@ -111,7 +88,7 @@ pub async fn register_user(item: web::Form<RegisterForm>, state: web::Data<AppSt
     match res {
         Ok(user) => {
             HttpResponse::Created()
-                .content_type("application/json")
+                .content_type(ContentType::json())
                 .json(json!({
                     "status": "success",
                     "message": "Account created, please login to continue."
@@ -120,7 +97,7 @@ pub async fn register_user(item: web::Form<RegisterForm>, state: web::Data<AppSt
         Err(err) => {
             println!("db error {:#?}", err);
             HttpResponse::InternalServerError()
-                .content_type("application/json")
+                .content_type(ContentType::json())
                 .json(json!({
                     "status": "error",
                     "message": "Error creating account."

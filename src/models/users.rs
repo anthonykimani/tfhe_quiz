@@ -35,6 +35,5 @@ pub struct LoginForm {
 pub struct RegisterForm {
     pub name: String,
     pub email: String,
-    pub age: String,
     pub password: String
 }
