@@ -1,11 +1,10 @@
 use std::sync::Mutex;
 use actix_cors::Cors;
-use actix_web::cookie::SameSite;
 use actix_web::{App, HttpServer, web};
 use dotenvy::dotenv;
 use crate::db_operations::db;
 use crate::models::app_state::AppState;
-use crate::controllers::users::{ login_user, register_user};
+use crate::controllers::users::{auth_verify, login_user, register_user};
 
 mod models;
 mod db_operations;
@@ -32,6 +31,7 @@ async fn main() -> std::io::Result<()> {
             )
             .route("/auth/login", web::post().to(login_user))
             .route("/auth/register", web::post().to(register_user))
+            .route("/auth/verify", web::post().to(auth_verify))
     })
         .bind(("127.0.0.1", 7000))?.run().await
 }
