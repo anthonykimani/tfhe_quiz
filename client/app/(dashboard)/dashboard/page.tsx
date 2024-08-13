@@ -2,11 +2,15 @@
 
 import { Button } from "@/components/ui/button";
 import { quiz } from "@/helpers/quizSource";
+import useAxios from "@/hooks/useAxios";
+import { ResultType } from "@/types/form-types";
+import { useMutation } from "@tanstack/react-query";
 import React, { useState } from "react";
 import { io } from "socket.io-client";
 
 const QuizPage = () => {
-  const socket = io("http://0.0.0.0:8000");
+  //   const socket = io("http://0.0.0.0:8000");
+  const api = useAxios();
   const [activeQuestion, setActiveQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState(false);
   const [checked, setChecked] = useState(false);
@@ -82,6 +86,30 @@ const QuizPage = () => {
     setChecked(false);
   };
 
+  // Mutation to Initiate Results Submit
+  const submitResults = useMutation({
+    mutationFn: (submitResultsPost: ResultType) => {
+      console.log({
+        score: result.score,
+        correctAnswers: result.correctAnswers,
+        wrongAnswers: result.wrongAnswers,
+      });
+      return api.post("**route*", {
+        score: submitResultsPost.score,
+        correctAnswers: submitResultsPost.correctAnswers,
+        wrongAnswers: submitResultsPost.wrongAnswers,
+      });
+    },
+    onSuccess: (data, variables, context) => {},
+    onError: (error, variables, context) => {
+      // Handle errors, e.g., show a message to the user
+      console.error(error);
+    },
+    onSettled: (data, error, variables, context) => {
+      console.log(data);
+    },
+  });
+
   return (
     <section>
       <h1>
@@ -126,8 +154,8 @@ const QuizPage = () => {
           </div>
         ) : (
           <div>
-            <h3>Results</h3>
-            <h3>Overall {(result.score / 25) * 100}%</h3>
+            <h3>Submit Results</h3>
+            {/* <h3>Overall {(result.score / 25) * 100}%</h3>
             <h4>
               Total Questions: <span>{questions.length}</span>
             </h4>
@@ -139,7 +167,15 @@ const QuizPage = () => {
             </h4>
             <h4>
               Wrong Answers: <span>{result.wrongAnswers}</span>
-            </h4>
+            </h4> */}
+
+            <Button
+              variant={"default"}
+              size={"fill"}
+              onClick={() => submitResults.mutate(result)}
+            >
+              Submit
+            </Button>
             <Button
               variant={"outline"}
               onClick={() => window.location.reload()}

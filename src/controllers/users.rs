@@ -6,8 +6,7 @@ use serde_json::json;
 use crate::db_operations::users::{add_user, get_a_user_by_mail};
 use crate::models::app_state::AppState;
 use crate::models::users::{Claims, LoginForm, NewUser, RegisterForm};
-use std::env;
-use base64::{Engine as _, engine::general_purpose};
+use base64::{Engine as _};
 use dotenv::dotenv;
 use jsonwebtoken::errors::ErrorKind;
 

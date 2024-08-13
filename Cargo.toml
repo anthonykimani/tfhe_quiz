@@ -1,5 +1,5 @@
 [package]
-name = "tfhe_voting_system"
+name = "tfhe_quiz"
 version = "0.1.0"
 edition = "2021"
 
@@ -15,6 +15,7 @@ actix-cors = "0.7.0"
 jsonwebtoken = "9.3.0"
 dotenv = "0.15.0"
 base64 = "0.22.1"
+tfhe = { version = "0.7.2", features = [ "boolean", "shortint", "integer", "x86_64-unix" ] }
 
 [profile.dev]
 opt-level = 1
