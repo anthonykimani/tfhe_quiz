@@ -28,6 +28,9 @@ import {
   MagnifyingGlassIcon,
 } from "@heroicons/react/20/solid";
 import Link from "next/link";
+import { useGetLoginData } from "@/hooks/apiHooks";
+import { useAtom } from "jotai";
+import { loginDataAtom } from "@/lib/atom";
 
 const navigation = [
   { name: "Candidates", href: "/candidates", icon: UsersIcon, current: false },
@@ -55,6 +58,7 @@ function classNames(...classes: string[]) {
 
 export default function Sidebar({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loginData, setLoginData] = useAtom(loginDataAtom);    
 
   return (
     <>
@@ -344,7 +348,7 @@ export default function Sidebar({ children }: { children: React.ReactNode }) {
                         className="ml-4 text-sm font-semibold leading-6 text-black"
                         aria-hidden="true"
                       >
-                        Tom Cook
+                        {loginData.email}
                       </span>
                       <ChevronDownIcon
                         className="ml-2 h-5 w-5 text-gray-400"

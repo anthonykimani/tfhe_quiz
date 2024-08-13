@@ -11,6 +11,8 @@ import { Form, Formik, useField } from "formik";
 import * as Yup from "yup";
 import TextInput from "@/components/inputs/text-input";
 import PasswordInput from "@/components/inputs/password-input";
+import { atom, useAtom } from 'jotai'
+import { loginDataAtom } from "@/lib/atom";
 
 // A wrapper or assertion to cast the useAuth hook's return type
 // const useAuth = () => useAuthOriginal() as unknown as AuthContextType;
@@ -23,6 +25,8 @@ export default function Home() {
   const [openAccErr, setOpenAccErr] = useState(false); // Opens the Failed Acc Creation Loading Dialog
   const api = useAxios();
   const router = useRouter();
+  const [loginData, setLoginData] = useAtom(loginDataAtom);
+
 
   // Mutation to Initiate Login User
   const initiateLoginUser = useMutation({
@@ -42,7 +46,7 @@ export default function Home() {
       setOpenLoading(false);
       setOpenLoggin(true);
       console.log(data);
-      // login(data); // Use the login function from your context
+      setLoginData(data.data);
       router.replace("/dashboard");
     },
     onError: (error, variables, context) => {
