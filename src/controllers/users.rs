@@ -1,10 +1,15 @@
-use actix_web::{HttpResponse, Responder, web};
+use actix_web::{HttpResponse, web};
 use actix_web::http::header::ContentType;
 use bcrypt::{DEFAULT_COST, hash, verify};
+use jsonwebtoken::{Algorithm, decode, DecodingKey, encode, EncodingKey, Header, Validation};
 use serde_json::json;
 use crate::db_operations::users::{add_user, get_a_user_by_mail};
 use crate::models::app_state::AppState;
-use crate::models::users::{LoginForm, NewUser, RegisterForm};
+use crate::models::users::{Claims, LoginForm, NewUser, RegisterForm};
+use std::env;
+use base64::{Engine as _, engine::general_purpose};
+use dotenv::dotenv;
+use jsonwebtoken::errors::ErrorKind;
 
 async fn handle_register_error(error: &str) -> HttpResponse {
     let response_body = json!({
@@ -14,20 +19,46 @@ async fn handle_register_error(error: &str) -> HttpResponse {
     HttpResponse::Ok().content_type(ContentType::json()).body(response_body.to_string())
 }
 
+fn check_base64_length_and_padding(encoded: &str) -> bool {
+    let length = encoded.len();
+    let valid_length = length % 4 == 0;
+    let ends_with_padding = encoded.ends_with('=') || encoded.ends_with("==");
+
+    length == 44 && valid_length && ends_with_padding
+}
+
+
+pub fn create_jwt(user_id: i32) -> String {
+    dotenv().ok();
+    let expiration = chrono::Utc::now()
+        .checked_add_signed(chrono::Duration::days(7))
+        .expect("valid timestamp")
+        .timestamp() as usize;
+
+    let claims = Claims {
+        sub: user_id.to_string(),
+        exp: expiration,
+    };
+
+    encode(&Header::new(Algorithm::HS256), &claims, &EncodingKey::from_secret("secret".as_ref())).unwrap()
+}
+
+
 pub async fn login_user(json: web::Json<LoginForm>, state: web::Data<AppState>) -> Result<HttpResponse, actix_web::Error> {
     let mut connection_guard = state.db_connection.lock().unwrap();
 
     let user_exist = get_a_user_by_mail(&mut *connection_guard, json.email.clone());
     match user_exist {
         Some(user) => {
+            let token = create_jwt(user.id);
             if verify(&json.password, &user.password).unwrap_or(false) {
-                println!("user_email:{:?}", &json.email);
                 Ok(HttpResponse::Ok()
                     .content_type(ContentType::json())
                     .json(json!({
                         "status": "success",
                         "message": "Login successful.",
-                        "redirect_url": "/dashboard"
+                        "user_reference" : &user.id.to_string(),
+                        "token": token,
                     })))
             } else {
                 // Error response for wrong password
@@ -35,7 +66,7 @@ pub async fn login_user(json: web::Json<LoginForm>, state: web::Data<AppState>) 
                     .content_type(ContentType::json())
                     .json(json!({
                         "status": "error",
-                        "message": "Wrong password."
+                        "message": "Invalid Logins"
                     })))
             }
         }
@@ -104,4 +135,61 @@ pub async fn register_user(state: web::Data<AppState>, json: web::Json<RegisterF
                 }))
         }
     }
+}
+pub fn verify_user(token: &str, user_reference: &str) -> Result<HttpResponse, HttpResponse> {
+
+    match decode::<Claims>(&token, &DecodingKey::from_secret("secret".as_ref()), &Validation::new(Algorithm::HS256)) {
+        Ok(token_data) => {
+            println!("{:?}",token_data);
+            // Compare the `user_reference` from the token with the provided reference
+            if token_data.claims.sub == user_reference {
+                Ok(HttpResponse::Ok()
+                    .content_type(ContentType::json())
+                    .json(json!({
+                        "status": "success",
+                        "message": "User verified."
+                    })))
+            } else {
+                Err(HttpResponse::Unauthorized()
+                    .content_type(ContentType::json())
+                    .json(json!({
+                        "status": "error",
+                        "message": "Invalid user reference."
+                    })))
+            }
+        }
+        Err(err) => match *err.kind() {
+            ErrorKind::InvalidToken => {
+                // Token is invalid (e.g., wrong signature)
+                Err(HttpResponse::Unauthorized()
+                    .content_type(ContentType::json())
+                    .json(json!({
+                        "status": "error",
+                        "message": "Invalid token."
+                    })))
+            }
+            ErrorKind::ExpiredSignature => {
+                // Token has expired
+                Err(HttpResponse::Unauthorized()
+                    .content_type(ContentType::json())
+                    .json(json!({
+                        "status": "error",
+                        "message": "Token has expired."
+                    })))
+            }
+            _ => {
+                // Other errors
+                Err(HttpResponse::InternalServerError()
+                    .content_type(ContentType::json())
+                    .json(json!({
+                        "error": err.to_string(),
+                        "message": "Token verification failed."
+                    })))
+            }
+        },
+    }
+}
+
+pub async fn auth_verify(token: String, user_reference: String) -> HttpResponse {
+    verify_user(&token, &user_reference).unwrap_or_else(|response| response)
 }

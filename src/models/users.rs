@@ -37,3 +37,17 @@ pub struct RegisterForm {
     pub email: String,
     pub password: String
 }
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Claims {
+    pub sub: String,
+    pub exp: usize,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AuthSuccess {
+    pub message: String,
+    pub status: String,
+    pub token: String,
+    pub user_reference: String,
+}
