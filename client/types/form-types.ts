@@ -17,3 +17,10 @@ export interface AuthContextType {
     password: string;
     confirmPassword: string;
   };
+
+  export type AuthSuccess = {
+    token: string;
+    user_reference: string;
+    email: string;
+    username: string;
+  }

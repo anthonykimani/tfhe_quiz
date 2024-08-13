@@ -59,6 +59,8 @@ pub async fn login_user(json: web::Json<LoginForm>, state: web::Data<AppState>) 
                         "message": "Login successful.",
                         "user_reference" : &user.id.to_string(),
                         "token": token,
+                        "email": &user.email.to_string(),
+                        "username": &user.name.to_string(),
                     })))
             } else {
                 // Error response for wrong password
