@@ -10,17 +10,22 @@ export interface AuthContextType {
     password: string;
   }
   
-  
   // Define the types for the form data
   export type SignUpFormData = {
     email: string;
     password: string;
     confirmPassword: string;
   };
-
+  
   export type AuthSuccess = {
     token: string;
     user_reference: string;
     email: string;
     username: string;
-  }
+  };
+  
+  export type ResultType = {
+    score: number;
+    correctAnswers: number;
+    wrongAnswers: number;
+  };

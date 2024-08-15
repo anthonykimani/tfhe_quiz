@@ -17,7 +17,6 @@ pub struct User {
 #[derive(Queryable, Selectable, Debug, Insertable,  Serialize, Deserialize)]
 #[diesel(table_name = crate::schema::users)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-
 pub struct NewUser {
     pub name: String,
     pub email: String,

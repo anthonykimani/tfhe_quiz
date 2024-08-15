@@ -2,25 +2,23 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Selectable, Debug,  Serialize, Deserialize)]
-#[diesel(table_name = crate::schema::votes)]
+#[diesel(table_name = crate::schema::questions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-pub struct Vote {
+pub struct Question {
     pub id: i32,
-    pub user_id: i32,
-    pub candidate_id: i32,
-    pub position_id: i32,
-    pub encrypted_vote: String,
+    pub quiz_id: i32,
+    pub question_text: String,
+    pub question_type: String,
     pub created_at: chrono::NaiveDateTime,
     pub updated_at: chrono::NaiveDateTime,
 }
 
 #[derive(Queryable, Selectable, Debug, Insertable,  Serialize, Deserialize)]
-#[diesel(table_name = crate::schema::votes)]
+#[diesel(table_name = crate::schema::questions)]
 #[diesel(check_for_backend(diesel::pg::Pg))]
-
-pub struct NewVote {
-    pub user_id: i32,
-    pub candidate_id: i32,
-    pub position_id: i32,
-    pub encrypted_vote: String,
+pub struct NewQuestion {
+    pub id: i32,
+    pub quiz_id: i32,
+    pub question_text: String,
+    pub question_type: String,
 }

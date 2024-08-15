@@ -1,5 +1,7 @@
 pub mod db;
 pub mod users;
-pub mod candidates;
-pub mod positions;
-pub mod votes;
+pub mod quizzes;
+pub mod questions;
+pub mod answers;
+pub mod user_answers;
+pub mod results;

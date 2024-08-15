@@ -1,5 +1,7 @@
 pub mod users;
-pub mod candidates;
-pub mod positions;
-pub mod votes;
 pub mod app_state;
+pub mod quiz;
+pub mod question;
+pub mod answer;
+pub mod user_answer;
+pub mod result;

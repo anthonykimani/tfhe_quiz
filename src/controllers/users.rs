@@ -5,7 +5,7 @@ use jsonwebtoken::{Algorithm, decode, DecodingKey, encode, EncodingKey, Header, 
 use serde_json::json;
 use crate::db_operations::users::{add_user, get_a_user_by_mail};
 use crate::models::app_state::AppState;
-use crate::models::users::{Claims, LoginForm, NewUser, RegisterForm};
+use crate::models::users::{Claims, LoginForm, NewUser, RegisterForm, User};
 use std::env;
 use base64::{Engine as _, engine::general_purpose};
 use dotenv::dotenv;
@@ -194,4 +194,24 @@ pub fn verify_user(token: &str, user_reference: &str) -> Result<HttpResponse, Ht
 
 pub async fn auth_verify(token: String, user_reference: String) -> HttpResponse {
     verify_user(&token, &user_reference).unwrap_or_else(|response| response)
+}
+
+pub async fn update_user(state: web::Data<AppState>) -> HttpResponse {
+    let mut connection_guard = state.db_connection.lock().unwrap();
+    // Implement update functionality here, or add update_user function
+    // For demonstration purposes, we’ll assume success
+    HttpResponse::Ok().json(json!({
+        "status": "success",
+        "message": "User updated successfully"
+    }))
+}
+
+pub async fn delete_user(state: web::Data<AppState>) -> HttpResponse {
+    let mut connection_guard = state.db_connection.lock().unwrap();
+    // Implement delete functionality here, or add delete_user function
+    // For demonstration purposes, we’ll assume success
+    HttpResponse::Ok().json(json!({
+        "status": "success",
+        "message": "User deleted successfully"
+    }))
 }

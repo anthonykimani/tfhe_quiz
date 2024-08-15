@@ -1,22 +1,33 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
-    candidates (id) {
+    answers (id) {
         id -> Int4,
-        name -> Varchar,
-        email -> Varchar,
-        password -> Varchar,
-        position_id -> Int4,
+        question_id -> Int4,
+        answer_text -> Text,
+        is_correct -> Bool,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
 }
 
 diesel::table! {
-    positions (id) {
+    questions (id) {
         id -> Int4,
-        position_name -> Varchar,
-        description -> Varchar,
+        quiz_id -> Int4,
+        question_text -> Text,
+        question_type -> Varchar,
+        created_at -> Timestamp,
+        updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    quizzes (id) {
+        id -> Int4,
+        title -> Varchar,
+        description -> Nullable<Text>,
+        user_id -> Int4,
         created_at -> Timestamp,
         updated_at -> Timestamp,
     }
@@ -25,11 +36,22 @@ diesel::table! {
 diesel::table! {
     results (id) {
         id -> Int4,
-        candidate_id -> Int4,
-        position_id -> Int4,
-        encrypted_tally -> Varchar,
+        user_id -> Int4,
+        quiz_id -> Int4,
+        score -> Int4,
+        completed_at -> Timestamp,
         created_at -> Timestamp,
         updated_at -> Timestamp,
+    }
+}
+
+diesel::table! {
+    user_answers (id) {
+        id -> Int4,
+        user_id -> Int4,
+        question_id -> Int4,
+        answer_id -> Int4,
+        selected_at -> Timestamp,
     }
 }
 
@@ -45,29 +67,20 @@ diesel::table! {
     }
 }
 
-diesel::table! {
-    votes (id) {
-        id -> Int4,
-        user_id -> Int4,
-        candidate_id -> Int4,
-        position_id -> Int4,
-        encrypted_vote -> Varchar,
-        created_at -> Timestamp,
-        updated_at -> Timestamp,
-    }
-}
-
-diesel::joinable!(candidates -> positions (position_id));
-diesel::joinable!(results -> candidates (candidate_id));
-diesel::joinable!(results -> positions (position_id));
-diesel::joinable!(votes -> candidates (candidate_id));
-diesel::joinable!(votes -> positions (position_id));
-diesel::joinable!(votes -> users (user_id));
+diesel::joinable!(answers -> questions (question_id));
+diesel::joinable!(questions -> quizzes (quiz_id));
+diesel::joinable!(quizzes -> users (user_id));
+diesel::joinable!(results -> quizzes (quiz_id));
+diesel::joinable!(results -> users (user_id));
+diesel::joinable!(user_answers -> answers (answer_id));
+diesel::joinable!(user_answers -> questions (question_id));
+diesel::joinable!(user_answers -> users (user_id));
 
 diesel::allow_tables_to_appear_in_same_query!(
-    candidates,
-    positions,
+    answers,
+    questions,
+    quizzes,
     results,
+    user_answers,
     users,
-    votes,
 );
